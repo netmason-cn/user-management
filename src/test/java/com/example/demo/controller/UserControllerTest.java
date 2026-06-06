@@ -151,7 +151,10 @@ class UserControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(400))
-                .andExpect(jsonPath("$.message").value("参数校验失败"));
+                .andExpect(jsonPath("$.message").value("参数校验失败"))
+                .andExpect(jsonPath("$.data.name").value("姓名不能为空"))
+                .andExpect(jsonPath("$.data.email").value("邮箱格式不正确"))
+                .andExpect(jsonPath("$.data.age").value("年龄必须大于0"));
 
         verify(userService, never()).create(any(CreateUserRequest.class));
     }
@@ -208,6 +211,7 @@ class UserControllerTest {
     void update_ShouldReturnError_WhenUserNotFound() throws Exception {
         UpdateUserRequest request = new UpdateUserRequest();
         request.setName("不存在");
+        request.setAge(25);
 
         when(userService.update(eq(999L), any(UpdateUserRequest.class)))
                 .thenThrow(new RuntimeException("用户不存在: 999"));

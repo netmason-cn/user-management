@@ -2,6 +2,7 @@ package com.example.demo.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 
 public class UpdateUserRequest {
 
@@ -10,6 +11,7 @@ public class UpdateUserRequest {
     @Email(message = "邮箱格式不正确")
     private String email;
 
+    @NotNull(message = "年龄不能为空")
     @Min(value = 1, message = "年龄必须大于0")
     private Integer age;
 

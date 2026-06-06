@@ -20,7 +20,7 @@ public class GlobalExceptionHandler {
         ex.getBindingResult().getFieldErrors()
                 .forEach(e -> errors.put(e.getField(), e.getDefaultMessage()));
         return ResponseEntity.badRequest()
-                .body(ApiResponse.error(400, "参数校验失败"));
+                .body(ApiResponse.error(400, "参数校验失败", errors));
     }
 
     // 处理业务异常（如用户不存在、邮箱重复）

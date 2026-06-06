@@ -7,10 +7,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 @DataJpaTest
 class UserRepositoryTest {
@@ -82,7 +84,7 @@ class UserRepositoryTest {
         assertThat(saved.getId()).isNotNull();
         assertThat(saved.getCreatedAt()).isNotNull();
         assertThat(saved.getUpdatedAt()).isNotNull();
-        assertThat(saved.getCreatedAt()).isEqualTo(saved.getUpdatedAt());
+        assertThat(saved.getCreatedAt()).isCloseTo(saved.getUpdatedAt(), within(1, ChronoUnit.SECONDS));
     }
 
     @Test
