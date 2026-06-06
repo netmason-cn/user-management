@@ -1,0 +1,51 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: user-management
+
+  # 默认用 H2 内存数据库（开发环境，不需要安装 MySQL）
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  # Redis 缓存（如需启用请配置以下内容）
+  # redis:
+  #   host: localhost
+  #   port: 6379
+  cache:
+    type: simple
+
+  cloud:
+    nacos:
+      discovery:
+        enabled: false      # 本地开发禁用 Nacos，需要时取消注释下方配置
+      config:
+        enabled: false
+
+  # RabbitMQ（如需启用请配置以下内容）
+  # rabbitmq:
+  #   host: localhost
+  #   port: 5672
+  #   username: guest
+  #   password: guest
+
+# Nacos（如需启用请配置以下内容）
+# spring:
+#   cloud:
+#     nacos:
+#       discovery:
+#         server-addr: 127.0.0.1:8848
