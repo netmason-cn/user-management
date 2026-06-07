@@ -1,27 +1,14 @@
 package com.example.demo.entity;
 
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "users")
 public class User {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(nullable = false)
     private String name;
-
-    @Column(nullable = false, unique = true)
     private String email;
-
     private Integer age;
-
-    @Column(updatable = false)
     private LocalDateTime createdAt;
-
     private LocalDateTime updatedAt;
 
     public User() {}
@@ -30,17 +17,6 @@ public class User {
         this.name = name;
         this.email = email;
         this.age = age;
-    }
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
     }
 
     // getter / setter
@@ -57,5 +33,8 @@ public class User {
     public void setAge(Integer age) { this.age = age; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
     public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

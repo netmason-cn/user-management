@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.mapper.UserMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users (name, email, age, created_at, updated_at)
+        VALUES (#{name}, #{email}, #{age}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <update id="update">
+        UPDATE users
+        SET name       = #{name},
+            email      = #{email},
+            age        = #{age},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM users WHERE id = #{id}
+    </delete>
+
+    <select id="selectById" resultType="User">
+        SELECT id, name, email, age, created_at, updated_at
+        FROM users WHERE id = #{id}
+    </select>
+
+    <select id="selectAll" resultType="User">
+        SELECT id, name, email, age, created_at, updated_at FROM users
+    </select>
+
+    <select id="selectByEmail" resultType="User">
+        SELECT id, name, email, age, created_at, updated_at
+        FROM users WHERE email = #{email}
+    </select>
+
+    <select id="selectByNameContaining" resultType="User">
+        SELECT id, name, email, age, created_at, updated_at
+        FROM users WHERE name LIKE CONCAT('%', #{keyword}, '%')
+    </select>
+
+    <select id="countById" resultType="int">
+        SELECT COUNT(*) FROM users WHERE id = #{id}
+    </select>
+
+</mapper>

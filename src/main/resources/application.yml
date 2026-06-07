@@ -17,10 +17,10 @@ spring:
       enabled: true
       path: /h2-console
 
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
 
   # Redis 缓存（如需启用请配置以下内容）
   # redis:
@@ -42,6 +42,17 @@ spring:
   #   port: 5672
   #   username: guest
   #   password: guest
+
+# MyBatis
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.example.demo.entity
+  configuration:
+    map-underscore-to-camel-case: true
+
+logging:
+  level:
+    com.example.demo.mapper: DEBUG
 
 # Nacos（如需启用请配置以下内容）
 # spring:

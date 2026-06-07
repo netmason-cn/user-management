@@ -13,7 +13,7 @@
 
     <groupId>com.example</groupId>
     <artifactId>user-management</artifactId>
-    <version>1.0.0</version>
+    <version>2.0.0</version>
     <name>user-management</name>
     <description>User Management REST API - Spring Boot Practice Project</description>
 
@@ -29,10 +29,11 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- JPA -->
+        <!-- MyBatis -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
+            <groupId>org.mybatis.spring.boot</groupId>
+            <artifactId>mybatis-spring-boot-starter</artifactId>
+            <version>3.0.3</version>
         </dependency>
 
         <!-- Validation -->
@@ -81,6 +82,14 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- MyBatis Test -->
+        <dependency>
+            <groupId>org.mybatis.spring.boot</groupId>
+            <artifactId>mybatis-spring-boot-starter-test</artifactId>
+            <version>3.0.3</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
