@@ -50,6 +50,11 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
 
+jwt:
+  secret: mySuperSecretKeyForJWTSigningShouldBeLongEnoughAtLeast256Bits
+  expiration-ms: 86400000
+  refresh-expiration-ms: 604800000
+
 logging:
   level:
     com.example.demo.mapper: DEBUG

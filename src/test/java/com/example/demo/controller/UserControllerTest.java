@@ -1,19 +1,23 @@
 package com.example.demo.controller;
 
-import com.example.demo.dto.ApiResponse;
 import com.example.demo.dto.CreateUserRequest;
 import com.example.demo.dto.UpdateUserRequest;
 import com.example.demo.entity.User;
+import com.example.demo.service.JwtTokenProvider;
 import com.example.demo.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import java.util.Arrays;
 import java.util.List;
@@ -21,10 +25,10 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(UserController.class)
+@SpringBootTest
+@AutoConfigureMockMvc
 class UserControllerTest {
 
     @Autowired
@@ -33,19 +37,67 @@ class UserControllerTest {
     @MockBean
     private UserService userService;
 
+    @MockBean
+    private PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private UserDetailsService userDetailsService;  // JWT 过滤器需要
+
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
+
+    private String authToken;  // 在 @BeforeEach 中初始化
     private User user1;
     private User user2;
 
     @BeforeEach
     void setUp() {
+        // 生成真实 JWT token，所有请求将通过 Spring Security 认证
+        authToken = "Bearer " + jwtTokenProvider.generateToken(99L, "test-admin@example.com", "ADMIN");
+
+        // Mock UserDetailsService，让 JWT 过滤器认证通过
+        org.springframework.security.core.userdetails.UserDetails mockUser =
+                org.springframework.security.core.userdetails.User
+                        .withUsername("99")
+                        .password("password")
+                        .authorities("ROLE_ADMIN")
+                        .build();
+        when(userDetailsService.loadUserByUsername("99")).thenReturn(mockUser);
+
         user1 = new User("张三", "zhangsan@example.com", 25);
         user1.setId(1L);
 
         user2 = new User("李四", "lisi@example.com", 30);
         user2.setId(2L);
+    }
+
+    // ==================== 请求封装（自动带 JWT token）====================
+
+    private MockHttpServletRequestBuilder authGet(String url) {
+        return org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(url)
+                .header("Authorization", authToken);
+    }
+
+    private MockHttpServletRequestBuilder authPost(String url, String jsonBody) {
+        return org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post(url)
+                .header("Authorization", authToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonBody);
+    }
+
+    private MockHttpServletRequestBuilder authPut(String url, String jsonBody) {
+        return org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(url)
+                .header("Authorization", authToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonBody);
+    }
+
+    private MockHttpServletRequestBuilder authDelete(String url) {
+        return org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete(url)
+                .header("Authorization", authToken);
     }
 
     // ==================== GET /api/users ====================
@@ -56,7 +108,7 @@ class UserControllerTest {
         List<User> users = Arrays.asList(user1, user2);
         when(userService.findAll()).thenReturn(users);
 
-        mockMvc.perform(get("/api/users"))
+        mockMvc.perform(authGet("/api/users"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.message").value("成功"))
@@ -72,7 +124,7 @@ class UserControllerTest {
     void findAll_ShouldReturnEmptyList() throws Exception {
         when(userService.findAll()).thenReturn(List.of());
 
-        mockMvc.perform(get("/api/users"))
+        mockMvc.perform(authGet("/api/users"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.length()").value(0));
@@ -87,7 +139,7 @@ class UserControllerTest {
     void findById_ShouldReturnUser() throws Exception {
         when(userService.findById(1L)).thenReturn(user1);
 
-        mockMvc.perform(get("/api/users/1"))
+        mockMvc.perform(authGet("/api/users/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.id").value(1))
@@ -103,7 +155,7 @@ class UserControllerTest {
     void findById_ShouldReturnError_WhenUserNotFound() throws Exception {
         when(userService.findById(999L)).thenThrow(new RuntimeException("用户不存在: 999"));
 
-        mockMvc.perform(get("/api/users/999"))
+        mockMvc.perform(authGet("/api/users/999"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(400))
                 .andExpect(jsonPath("$.message").value("用户不存在: 999"));
@@ -120,15 +172,15 @@ class UserControllerTest {
         request.setName("王五");
         request.setEmail("wangwu@example.com");
         request.setAge(28);
+        request.setPassword("123456");
+        request.setRole("USER");
 
         User newUser = new User("王五", "wangwu@example.com", 28);
         newUser.setId(3L);
 
         when(userService.create(any(CreateUserRequest.class))).thenReturn(newUser);
 
-        mockMvc.perform(post("/api/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(authPost("/api/users", objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.message").value("创建成功"))
@@ -142,13 +194,12 @@ class UserControllerTest {
     @DisplayName("POST /api/users - 缺少必填字段返回校验错误")
     void create_ShouldReturnValidationError_WhenFieldsMissing() throws Exception {
         CreateUserRequest request = new CreateUserRequest();
-        request.setName("");  // 空姓名
-        request.setEmail("not-an-email");  // 非法邮箱
-        request.setAge(0);   // 年龄 <= 0
+        request.setName("");
+        request.setEmail("not-an-email");
+        request.setAge(0);
+        request.setPassword("123");
 
-        mockMvc.perform(post("/api/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(authPost("/api/users", objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(400))
                 .andExpect(jsonPath("$.message").value("参数校验失败"))
@@ -166,13 +217,12 @@ class UserControllerTest {
         request.setName("张三");
         request.setEmail("zhangsan@example.com");
         request.setAge(25);
+        request.setPassword("123456");
 
         when(userService.create(any(CreateUserRequest.class)))
                 .thenThrow(new RuntimeException("邮箱已被注册: zhangsan@example.com"));
 
-        mockMvc.perform(post("/api/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(authPost("/api/users", objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(400))
                 .andExpect(jsonPath("$.message").value("邮箱已被注册: zhangsan@example.com"));
@@ -194,9 +244,7 @@ class UserControllerTest {
 
         when(userService.update(eq(1L), any(UpdateUserRequest.class))).thenReturn(updatedUser);
 
-        mockMvc.perform(put("/api/users/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(authPut("/api/users/1", objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.message").value("更新成功"))
@@ -216,9 +264,7 @@ class UserControllerTest {
         when(userService.update(eq(999L), any(UpdateUserRequest.class)))
                 .thenThrow(new RuntimeException("用户不存在: 999"));
 
-        mockMvc.perform(put("/api/users/999")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(authPut("/api/users/999", objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(400))
                 .andExpect(jsonPath("$.message").value("用户不存在: 999"));
@@ -233,7 +279,7 @@ class UserControllerTest {
     void delete_ShouldDeleteUser() throws Exception {
         doNothing().when(userService).delete(1L);
 
-        mockMvc.perform(delete("/api/users/1"))
+        mockMvc.perform(authDelete("/api/users/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.message").value("删除成功"));
@@ -246,7 +292,7 @@ class UserControllerTest {
     void delete_ShouldReturnError_WhenUserNotFound() throws Exception {
         doThrow(new RuntimeException("用户不存在: 999")).when(userService).delete(999L);
 
-        mockMvc.perform(delete("/api/users/999"))
+        mockMvc.perform(authDelete("/api/users/999"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(400))
                 .andExpect(jsonPath("$.message").value("用户不存在: 999"));

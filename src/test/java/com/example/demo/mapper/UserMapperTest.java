@@ -4,8 +4,9 @@ import com.example.demo.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -14,18 +15,26 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
-@MybatisTest
+@SpringBootTest
 class UserMapperTest {
 
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;  // 用于清空表
+
     private User savedUser;
 
     @BeforeEach
     void setUp() {
+        // 每次测试前清空 users 表，避免唯一索引冲突
+        jdbcTemplate.execute("DELETE FROM users");
+
         // 插入测试数据
         User user = new User("张三", "zhangsan@example.com", 25);
+        user.setPassword("hashed-password");
+        user.setRole("USER");
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
         userMapper.insert(user);
@@ -58,11 +67,15 @@ class UserMapperTest {
     @DisplayName("selectByNameContaining - 模糊查询匹配")
     void selectByNameContaining_ShouldReturnMatchingUsers() {
         User u1 = new User("张三丰", "zhangsanfeng@example.com", 80);
+        u1.setPassword("hashed-zsf");
+        u1.setRole("USER");
         u1.setCreatedAt(LocalDateTime.now());
         u1.setUpdatedAt(LocalDateTime.now());
         userMapper.insert(u1);
 
         User u2 = new User("李四", "lisi@example.com", 30);
+        u2.setPassword("hashed-lisi");
+        u2.setRole("USER");
         u2.setCreatedAt(LocalDateTime.now());
         u2.setUpdatedAt(LocalDateTime.now());
         userMapper.insert(u2);
@@ -89,6 +102,8 @@ class UserMapperTest {
     void insert_ShouldSetIdAndTimestamps() {
         User newUser = new User("李四", "lisi@example.com", 30);
         LocalDateTime now = LocalDateTime.now();
+        newUser.setPassword("hashed-lisi");
+        newUser.setRole("USER");
         newUser.setCreatedAt(now);
         newUser.setUpdatedAt(now);
 

@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 public class CreateUserRequest {
 
@@ -18,6 +19,12 @@ public class CreateUserRequest {
     @Min(value = 1, message = "年龄必须大于0")
     private Integer age;
 
+    @NotBlank(message = "密码不能为空")
+    @Size(min = 6, message = "密码长度至少6位")
+    private String password;
+
+    private String role = "USER";
+
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
@@ -26,4 +33,10 @@ public class CreateUserRequest {
 
     public Integer getAge() { return age; }
     public void setAge(Integer age) { this.age = age; }
+
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
 }

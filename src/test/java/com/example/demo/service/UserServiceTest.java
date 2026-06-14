@@ -12,6 +12,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.Arrays;
 import java.util.List;
@@ -27,19 +28,27 @@ class UserServiceTest {
     @Mock
     private UserMapper userMapper;
 
+    @Mock
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
     @InjectMocks
     private UserService userService;
 
     private User user1;
     private User user2;
+    private final BCryptPasswordEncoder realEncoder = new BCryptPasswordEncoder();
 
     @BeforeEach
     void setUp() {
         user1 = new User("张三", "zhangsan@example.com", 25);
         user1.setId(1L);
+        user1.setPassword(realEncoder.encode("password-1"));
+        user1.setRole("USER");
 
         user2 = new User("李四", "lisi@example.com", 30);
         user2.setId(2L);
+        user2.setPassword(realEncoder.encode("password-2"));
+        user2.setRole("USER");
     }
 
     // ==================== findAll ====================
@@ -104,8 +113,11 @@ class UserServiceTest {
         request.setName("王五");
         request.setEmail("wangwu@example.com");
         request.setAge(28);
+        request.setPassword("123456");
+        request.setRole("USER");
 
         when(userMapper.selectByEmail("wangwu@example.com")).thenReturn(null);
+        when(passwordEncoder.encode("123456")).thenReturn("hashed-123456");
 
         User result = userService.create(request);
 
