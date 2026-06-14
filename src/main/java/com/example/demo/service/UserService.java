@@ -7,6 +7,7 @@ import com.example.demo.mapper.UserMapper;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,9 +18,11 @@ import java.util.List;
 public class UserService {
 
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserMapper userMapper) {
+    public UserService(UserMapper userMapper, PasswordEncoder passwordEncoder) {
         this.userMapper = userMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Transactional(readOnly = true)
@@ -46,6 +49,9 @@ public class UserService {
         }
 
         User user = new User(request.getName(), request.getEmail(), request.getAge());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        String role = request.getRole() != null ? request.getRole() : "USER";
+        user.setRole(role);
         LocalDateTime now = LocalDateTime.now();
         user.setCreatedAt(now);
         user.setUpdatedAt(now);
@@ -74,6 +80,9 @@ public class UserService {
         }
         if (request.getAge() != null) {
             user.setAge(request.getAge());
+        }
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
 
         user.setUpdatedAt(LocalDateTime.now());
