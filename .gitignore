@@ -20,3 +20,8 @@ test-*.txt
 # OS
 .DS_Store
 Thumbs.db
+
+# AI 代理（可能含会话记录/凭证，不进仓库）
+.claude/
+
+# spec-kit 资产需入库，故不忽略 .specify/
